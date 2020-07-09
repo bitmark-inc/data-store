@@ -11,13 +11,14 @@ import (
 	"syscall"
 	"time"
 
+	bitmarksdk "github.com/bitmark-inc/bitmark-sdk-go"
+	"github.com/bitmark-inc/bitmark-sdk-go/account"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	prefixed "github.com/x-cray/logrus-prefixed-formatter"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
-	bitmarksdk "github.com/bitmark-inc/bitmark-sdk-go"
 	"github.com/bitmark-inc/data-store/web"
 )
 
@@ -133,8 +134,13 @@ func main() {
 		log.Panicf("connect mongo database with error: %s", err)
 	}
 
+	acct, err := account.FromSeed(viper.GetString("account.seed"))
+	if err != nil {
+		log.Panic(err)
+	}
+
 	// Init http server
-	server = web.NewServer(mongoClient)
+	server = web.NewServer("local", mongoClient, acct.(*account.AccountV2))
 	log.WithField("prefix", "init").Info("Initialized http server")
 
 	// Remove initial context

@@ -3,21 +3,13 @@ package web
 import (
 	"context"
 	"net/http"
-	"time"
 
-	sentrygin "github.com/getsentry/sentry-go/gin"
 	"github.com/gin-gonic/gin"
-	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/mongo"
 
+	"github.com/bitmark-inc/bitmark-sdk-go/account"
 	"github.com/bitmark-inc/data-store/store"
 )
-
-var log *logrus.Entry
-
-func init() {
-	log = logrus.WithField("prefix", "gin")
-}
 
 // Server to run a http server instance
 type Server struct {
@@ -25,18 +17,20 @@ type Server struct {
 
 	dataStorePool store.DataStorePool
 
+	bitmarkAccount *account.AccountV2
+
 	location string
 	rootKey  []byte
 }
 
 // NewServer new instance of server
-func NewServer(mongoClient *mongo.Client) *Server {
-
+func NewServer(location string, mongoClient *mongo.Client, acct *account.AccountV2) *Server {
 	return &Server{
-		location: "localhost",
+		location: location,
 		rootKey:  []byte("hello world"),
 
-		dataStorePool: store.NewMongodbDataPool(mongoClient),
+		dataStorePool:  store.NewMongodbDataPool(mongoClient),
+		bitmarkAccount: acct,
 	}
 }
 
@@ -53,47 +47,32 @@ func (s *Server) Run(addr string) error {
 func (s *Server) setupRouter() *gin.Engine {
 	r := gin.New()
 	r.Use(gin.Recovery())
-	r.Use(sentrygin.New(sentrygin.Options{
-		Repanic:         true,
-		WaitForDelivery: false,
-		Timeout:         10 * time.Second,
-	}))
 
 	apiRoute := r.Group("/api")
 	apiRoute.POST("/register", s.Register)
-	apiRoute.POST("/verify", s.Verify)
 
 	poiRatingRoute := r.Group("/poi_rating")
+	poiRatingRoute.Use(s.checkMacaroon())
 	poiRatingRoute.GET("/:poi_id", s.GetPOIResource)
 	poiRatingRoute.POST("", s.RatePOIResource)
 
 	return r
 }
 
-// Shutdown to shutdown the server
+// Shutdown terminates the web server.
 func (s *Server) Shutdown(ctx context.Context) error {
 	return s.server.Shutdown(ctx)
 }
 
-func responseWithEncoding(c *gin.Context, code int, obj gin.H) {
-	acceptEncoding := c.GetHeader("Accept-Encoding")
-	switch acceptEncoding {
-	default:
-		c.JSON(code, obj)
-	}
-}
-
-type ErrorResponse struct {
+type errorResponse struct {
 	Code    int64  `json:"code"`
 	Message string `json:"message"`
 }
 
-func abortWithEncoding(c *gin.Context, code int, obj ErrorResponse, errors ...error) {
+func abortWithErrorMessage(c *gin.Context, code int, resp errorResponse, errors ...error) {
 	for _, err := range errors {
 		c.Error(err)
 	}
-	responseWithEncoding(c, code, gin.H{
-		"error": obj,
-	})
+	c.JSON(code, resp)
 	c.Abort()
 }
