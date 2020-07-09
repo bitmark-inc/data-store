@@ -140,7 +140,7 @@ func main() {
 	}
 
 	// Init http server
-	server = web.NewServer("local", mongoClient, acct.(*account.AccountV2))
+	server = web.NewServer(viper.GetString("macaroon.location"), mongoClient, acct.(*account.AccountV2))
 	log.WithField("prefix", "init").Info("Initialized http server")
 
 	// Remove initial context
