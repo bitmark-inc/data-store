@@ -11,11 +11,13 @@ import (
 	"syscall"
 	"time"
 
-	bitmarksdk "github.com/bitmark-inc/bitmark-sdk-go"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	prefixed "github.com/x-cray/logrus-prefixed-formatter"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 
+	bitmarksdk "github.com/bitmark-inc/bitmark-sdk-go"
 	"github.com/bitmark-inc/data-store/web"
 )
 
@@ -120,8 +122,19 @@ func main() {
 	})
 	log.WithField("prefix", "init").Info("Initialized bitmark sdk")
 
+	opts := options.Client().ApplyURI(viper.GetString("mongo.conn"))
+	opts.SetMaxPoolSize(viper.GetUint64("mongo.pool"))
+	mongoClient, err := mongo.NewClient(opts)
+	if nil != err {
+		log.Panicf("create mongo client with error: %s", err)
+	}
+
+	if err := mongoClient.Connect(context.Background()); nil != err {
+		log.Panicf("connect mongo database with error: %s", err)
+	}
+
 	// Init http server
-	server = web.NewServer()
+	server = web.NewServer(mongoClient)
 	log.WithField("prefix", "init").Info("Initialized http server")
 
 	// Remove initial context
