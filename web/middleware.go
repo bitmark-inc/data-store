@@ -9,8 +9,16 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"gopkg.in/macaroon-bakery.v2/bakery/checkers"
 	"gopkg.in/macaroon.v2"
+)
+
+var (
+	allowedCavearOps = map[string]string{
+		"entity":    "=",
+		"action":    "=",
+		"resources": "in",
+		"time":      "<",
+	}
 )
 
 func (s *Server) checkMacaroon() gin.HandlerFunc {
@@ -29,7 +37,6 @@ func (s *Server) checkMacaroon() gin.HandlerFunc {
 			return
 		}
 
-		// TODO: find the root key for this account number
 		caveats, err := m.VerifySignature(s.rootKey, nil)
 		if err != nil {
 			c.JSON(http.StatusForbidden, gin.H{"reason": "invalid macaroon signature"})
@@ -37,11 +44,15 @@ func (s *Server) checkMacaroon() gin.HandlerFunc {
 		}
 
 		for _, cav := range caveats {
-			cond, arg, err := checkers.ParseCaveat(cav)
+			cond, op, arg, err := parseCaveat(cav)
 			if err != nil {
 				c.JSON(http.StatusForbidden, gin.H{"reason": err})
 			}
-			fmt.Println(cond, arg)
+
+			if op != allowedCavearOps[cond] {
+				c.JSON(http.StatusBadRequest, gin.H{"reason": "unknown operator in caveat"})
+				return
+			}
 
 			switch cond {
 			case "entity":
@@ -49,26 +60,20 @@ func (s *Server) checkMacaroon() gin.HandlerFunc {
 			case "action":
 				switch c.Request.Method {
 				case "POST", "PUT", "PATCH", "DELETE":
-					if arg != "= write" {
-						stop(c, cav)
+					if arg != "write" {
+						forbidAccess(c, cav)
 						return
 					}
 				case "GET", "HEAD":
-					if arg != "= read" {
-						stop(c, cav)
+					if arg != "read" {
+						forbidAccess(c, cav)
 						return
 					}
 				}
 			case "resources":
 				parts := strings.Split(c.Request.URL.Path, "/")
 				targetResource := parts[len(parts)-1]
-
-				if !strings.HasPrefix(arg, "in") {
-					c.JSON(http.StatusBadRequest, gin.H{"reason": "unknown caveat"})
-					return
-				}
-				allowedResources := strings.Split(strings.TrimLeft(arg, "in "), ",")
-
+				allowedResources := strings.Split(arg, ",")
 				valid := false
 				for _, r := range allowedResources {
 					if targetResource == r {
@@ -76,17 +81,11 @@ func (s *Server) checkMacaroon() gin.HandlerFunc {
 					}
 				}
 				if !valid {
-					stop(c, cav)
+					forbidAccess(c, cav)
 					return
 				}
 			case "time":
-				if !strings.HasPrefix(arg, "<") {
-					c.JSON(http.StatusBadRequest, gin.H{"reason": "unknown caveat"})
-					return
-				}
-
-				tsString := strings.TrimLeft(arg, "< ")
-				ts, err := strconv.ParseInt(tsString, 10, 64)
+				ts, err := strconv.ParseInt(arg, 10, 64)
 				if err != nil {
 					c.JSON(http.StatusBadRequest, gin.H{"reason": "invalid ts in caveat"})
 					return
@@ -94,14 +93,26 @@ func (s *Server) checkMacaroon() gin.HandlerFunc {
 
 				expTime := time.Unix(ts, 0)
 				if !time.Now().UTC().Before(expTime) {
-					stop(c, cav)
+					forbidAccess(c, cav)
+					return
 				}
 			}
 		}
 	}
 }
 
-func stop(c *gin.Context, cav string) {
+func parseCaveat(cav string) (string, string, string, error) {
+	if cav == "" {
+		return "", "", "", fmt.Errorf("empty caveat")
+	}
+	parts := strings.Split(cav, " ")
+	if len(parts) != 3 {
+		return "", "", "", fmt.Errorf("invalid caveat format")
+	}
+	return parts[0], parts[1], parts[2], nil
+}
+
+func forbidAccess(c *gin.Context, cav string) {
 	c.JSON(http.StatusForbidden, gin.H{"reason": fmt.Sprintf("caveat \"%s\" not satisfied", cav)})
 	c.Abort()
 }
