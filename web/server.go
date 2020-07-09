@@ -8,6 +8,9 @@ import (
 	sentrygin "github.com/getsentry/sentry-go/gin"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
+	"go.mongodb.org/mongo-driver/mongo"
+
+	"github.com/bitmark-inc/data-store/store"
 )
 
 var log *logrus.Entry
@@ -20,15 +23,20 @@ func init() {
 type Server struct {
 	server *http.Server
 
+	dataStorePool store.DataStorePool
+
 	location string
 	rootKey  []byte
 }
 
 // NewServer new instance of server
-func NewServer() *Server {
+func NewServer(mongoClient *mongo.Client) *Server {
+
 	return &Server{
 		location: "localhost",
 		rootKey:  []byte("hello world"),
+
+		dataStorePool: store.NewMongodbDataPool(mongoClient),
 	}
 }
 
@@ -54,6 +62,11 @@ func (s *Server) setupRouter() *gin.Engine {
 	apiRoute := r.Group("/api")
 	apiRoute.POST("/register", s.Register)
 	apiRoute.POST("/verify", s.Verify)
+
+	poiRatingRoute := r.Group("/poi_rating")
+	poiRatingRoute.GET("/:poi_id", s.GetPOIResource)
+	poiRatingRoute.POST("", s.RatePOIResource)
+
 	return r
 }
 
