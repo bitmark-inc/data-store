@@ -1,0 +1,14 @@
+server:
+  port: 8080
+bitmarksdk:
+  token:
+  network: testnet
+mongo:
+  conn: mongodb://127.0.0.1:27017/?compressors=disabled
+  database: autonomy
+  connect_timeout: 10
+  pool: 10
+sentry:
+  dsn:
+  dist: 0.1
+  environment: localnet
