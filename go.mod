@@ -5,7 +5,6 @@ go 1.13
 require (
 	github.com/bitmark-inc/bitmark-sdk-go v0.3.0
 	github.com/frankban/quicktest v1.7.3 // indirect
-	github.com/getsentry/sentry-go v0.6.1
 	github.com/gin-gonic/gin v1.6.1
 	github.com/golang/protobuf v1.4.2 // indirect
 	github.com/klauspost/compress v1.10.7 // indirect
@@ -24,6 +23,7 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/spf13/viper v1.7.0
+	github.com/stretchr/testify v1.6.1
 	github.com/x-cray/logrus-prefixed-formatter v0.5.2
 	github.com/xdg/stringprep v1.0.0 // indirect
 	go.mongodb.org/mongo-driver v1.3.4

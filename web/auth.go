@@ -4,9 +4,12 @@ import (
 	"encoding/hex"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"gopkg.in/macaroon.v2"
+
+	"github.com/bitmark-inc/bitmark-sdk-go/account"
 )
 
 func (s *Server) Register(c *gin.Context) {
@@ -14,33 +17,32 @@ func (s *Server) Register(c *gin.Context) {
 		Timestamp string `json:"timestamp"`
 		Signature string `json:"signature"`
 		Requester string `json:"requester"`
+		EncKey    string `json:"encryption_public_key"`
 	}
 
 	if err := c.BindJSON(&req); err != nil {
-		abortWithEncoding(c, http.StatusBadRequest, ErrorResponse{
-			Message: err.Error(),
-		}, err)
+		abortWithErrorMessage(c, http.StatusBadRequest, errorResponse{Message: err.Error()}, err)
+		return
+	}
+	sig, err := hex.DecodeString(req.Signature)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"reason": "signature not hex-encoded"})
+		return
+	}
+	msg := strings.Join([]string{req.EncKey, req.Timestamp}, "|")
+	if err := account.Verify(req.Requester, []byte(msg), sig); err != nil {
+		c.JSON(http.StatusForbidden, gin.H{"reason": "invalid signature"})
 		return
 	}
 
-	// sig, err := hex.DecodeString(req.Signature)
-	// if err != nil {
-	// 	c.JSON(http.StatusBadRequest, gin.H{"reason": "signature not hex-encoded"})
-	// 	return
-	// }
-
-	// if err := account.Verify(req.Requester, []byte(req.Timestamp), sig); err != nil {
-	// 	c.JSON(http.StatusForbidden, gin.H{"reason": "invalid signature"})
-	// 	return
-	// }
+	recipientPublicKey, err := hex.DecodeString(req.EncKey)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"reason": "encryption_public_key not hex-encoded"})
+		return
+	}
 
 	// mint macaroons
-	// uuid, err := uuid.NewRandom()
-	// if err != nil {
-	// 	c.JSON(http.StatusInternalServerError, gin.H{"reason": err})
-	// 	return
-	// }
-	rootMacaroon, err := macaroon.New(s.rootKey, []byte("ace6795b-1957-43d5-8148-81bd2190f1a3"), s.location, macaroon.V1)
+	rootMacaroon, err := macaroon.New(s.macaroonRootKey, []byte(req.Requester), s.macaroonLocation, macaroon.V1)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"reason": err})
 		return
@@ -55,55 +57,39 @@ func (s *Server) Register(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"reason": err})
 		return
 	}
-	rm, err := readMacaroon.MarshalBinary()
+
+	encryptedReadMacaroon, err := encryptMacaroon(readMacaroon, recipientPublicKey, s.bitmarkAccount)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"reason": err})
 		return
 	}
-	wm, err := writeMacaroon.MarshalBinary()
+	encryptedWriteMacaroon, err := encryptMacaroon(writeMacaroon, recipientPublicKey, s.bitmarkAccount)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"reason": err})
 		return
 	}
-	fmt.Println(string(readMacaroon.Id()), hex.EncodeToString(rm))
 	c.JSON(http.StatusOK, gin.H{
-		"r": hex.EncodeToString(rm),
-		"w": hex.EncodeToString(wm),
-	})
-}
-
-func (s *Server) Verify(c *gin.Context) {
-	var req struct {
-		Macaroon string `json:"macaroon"`
-	}
-
-	if err := c.BindJSON(&req); err != nil {
-		abortWithEncoding(c, http.StatusBadRequest, ErrorResponse{
-			Message: err.Error(),
-		}, err)
-		return
-	}
-
-	var m macaroon.Macaroon
-	data, _ := hex.DecodeString(req.Macaroon)
-	if err := m.UnmarshalBinary(data); err != nil {
-		c.JSON(http.StatusForbidden, gin.H{"reason": "macaroon not hex-encoded"})
-		return
-	}
-
-	caveats, err := m.VerifySignature(s.rootKey, nil)
-	if err != nil {
-		c.JSON(http.StatusForbidden, gin.H{"reason": "invalid signature"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"caveats": caveats,
+		"r": encryptedReadMacaroon,
+		"w": encryptedWriteMacaroon,
 	})
 }
 
 func createMacaroon(m *macaroon.Macaroon, op, accountNumber string) (*macaroon.Macaroon, error) {
 	cloned := m.Clone()
-	err := cloned.AddFirstPartyCaveat([]byte(fmt.Sprintf("%s @ %s", op, accountNumber)))
-	return cloned, err
+	cloned.AddFirstPartyCaveat([]byte(fmt.Sprintf("entity = %s", accountNumber)))
+	cloned.AddFirstPartyCaveat([]byte(fmt.Sprintf("action = %s", op)))
+	return cloned, nil
+}
+
+func encryptMacaroon(macaroon *macaroon.Macaroon, recipientPublicKey []byte, senderAccount *account.AccountV2) (string, error) {
+	data, err := macaroon.MarshalBinary()
+	if err != nil {
+		return "", err
+	}
+
+	ciphertext, err := senderAccount.EncrKey.Encrypt(data, recipientPublicKey)
+	if err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(ciphertext), nil
 }

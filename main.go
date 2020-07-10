@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/hex"
 	"flag"
 	"fmt"
 	"net/http"
@@ -18,6 +19,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 
 	bitmarksdk "github.com/bitmark-inc/bitmark-sdk-go"
+	"github.com/bitmark-inc/bitmark-sdk-go/account"
 	"github.com/bitmark-inc/data-store/web"
 )
 
@@ -133,8 +135,18 @@ func main() {
 		log.Panicf("connect mongo database with error: %s", err)
 	}
 
+	acct, err := account.FromSeed(viper.GetString("account.seed"))
+	if err != nil {
+		log.Panic(err)
+	}
+
+	rootKey, err := hex.DecodeString(viper.GetString("server.macaroon_root_key"))
+	if err != nil {
+		log.Panic(err)
+	}
+
 	// Init http server
-	server = web.NewServer(mongoClient)
+	server = web.NewServer(mongoClient, acct.(*account.AccountV2), viper.GetString("server.endpoint"), rootKey)
 	log.WithField("prefix", "init").Info("Initialized http server")
 
 	// Remove initial context
