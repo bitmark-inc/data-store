@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/bitmark-inc/bitmark-sdk-go/account"
 	"github.com/gin-gonic/gin"
@@ -27,7 +28,8 @@ func (s *Server) Register(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"reason": "signature not hex-encoded"})
 		return
 	}
-	if err := account.Verify(req.Requester, []byte(req.Timestamp), sig); err != nil {
+	msg := strings.Join([]string{req.EncKey, req.Timestamp}, "|")
+	if err := account.Verify(req.Requester, []byte(msg), sig); err != nil {
 		c.JSON(http.StatusForbidden, gin.H{"reason": "invalid signature"})
 		return
 	}

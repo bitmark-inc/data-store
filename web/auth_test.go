@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -37,9 +38,10 @@ func TestRegister(t *testing.T) {
 	defer testServer.Close()
 
 	// send registration request
-	ts := fmt.Sprintf("%d", time.Now().UTC().Unix())
-	sig := hex.EncodeToString(clientAccount.Sign([]byte(ts)))
 	pubkey := hex.EncodeToString(clientAccount.(*account.AccountV2).EncrKey.PublicKeyBytes())
+	ts := fmt.Sprintf("%d", time.Now().UTC().Unix())
+	msg := strings.Join([]string{pubkey, ts}, "|")
+	sig := hex.EncodeToString(clientAccount.Sign([]byte(msg)))
 	reqBody, _ := json.Marshal(map[string]string{
 		"requester":             clientAccount.AccountNumber(),
 		"timestamp":             ts,
