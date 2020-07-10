@@ -29,28 +29,29 @@ func (s *Server) checkMacaroon() gin.HandlerFunc {
 		var m macaroon.Macaroon
 		data, err := hex.DecodeString(token)
 		if err != nil {
-			c.JSON(http.StatusForbidden, gin.H{"reason": "macaroon not hex-encoded"})
+			abortWithErrorMessage(c, http.StatusBadRequest, errorResponse{Message: "macaroon not hex-encoded"})
 			return
 		}
 		if err := m.UnmarshalBinary(data); err != nil {
-			c.JSON(http.StatusForbidden, gin.H{"reason": err})
+			abortWithErrorMessage(c, http.StatusBadRequest, errorResponse{Message: "invalid macaroon"})
 			return
 		}
 
-		caveats, err := m.VerifySignature(s.rootKey, nil)
+		caveats, err := m.VerifySignature(s.macaroonRootKey, nil)
 		if err != nil {
-			c.JSON(http.StatusForbidden, gin.H{"reason": "invalid macaroon signature"})
+			abortWithErrorMessage(c, http.StatusBadRequest, errorResponse{Message: "invalid macaroon signature"})
 			return
 		}
 
 		for _, cav := range caveats {
 			cond, op, arg, err := parseCaveat(cav)
 			if err != nil {
-				c.JSON(http.StatusForbidden, gin.H{"reason": err})
+				abortWithErrorMessage(c, http.StatusBadRequest, errorResponse{Message: "invalid caveat"})
+				return
 			}
 
 			if op != allowedCavearOps[cond] {
-				c.JSON(http.StatusBadRequest, gin.H{"reason": "unknown operator in caveat"})
+				abortWithErrorMessage(c, http.StatusBadRequest, errorResponse{Message: "unknown operator in caveat"})
 				return
 			}
 
@@ -98,6 +99,8 @@ func (s *Server) checkMacaroon() gin.HandlerFunc {
 				}
 			}
 		}
+
+		c.Next()
 	}
 }
 

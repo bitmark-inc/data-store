@@ -4,11 +4,10 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/mongo"
-
 	"github.com/bitmark-inc/bitmark-sdk-go/account"
 	"github.com/bitmark-inc/data-store/store"
+	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // Server to run a http server instance
@@ -19,18 +18,17 @@ type Server struct {
 
 	bitmarkAccount *account.AccountV2
 
-	location string
-	rootKey  []byte
+	macaroonLocation string
+	macaroonRootKey  []byte
 }
 
 // NewServer new instance of server
-func NewServer(location string, mongoClient *mongo.Client, acct *account.AccountV2) *Server {
+func NewServer(mongoClient *mongo.Client, acct *account.AccountV2, endpoint string, macaroonRootKey []byte) *Server {
 	return &Server{
-		location: location,
-		rootKey:  []byte("hello world"),
-
-		dataStorePool:  store.NewMongodbDataPool(mongoClient),
-		bitmarkAccount: acct,
+		dataStorePool:    store.NewMongodbDataPool(mongoClient),
+		bitmarkAccount:   acct,
+		macaroonLocation: endpoint,
+		macaroonRootKey:  macaroonRootKey,
 	}
 }
 

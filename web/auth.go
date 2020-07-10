@@ -39,7 +39,7 @@ func (s *Server) Register(c *gin.Context) {
 	}
 
 	// mint macaroons
-	rootMacaroon, err := macaroon.New(s.rootKey, []byte(req.Requester), s.location, macaroon.V1)
+	rootMacaroon, err := macaroon.New(s.macaroonRootKey, []byte(req.Requester), s.macaroonLocation, macaroon.V1)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"reason": err})
 		return

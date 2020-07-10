@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/hex"
 	"flag"
 	"fmt"
 	"net/http"
@@ -139,8 +140,13 @@ func main() {
 		log.Panic(err)
 	}
 
+	rootKey, err := hex.DecodeString(viper.GetString("server.macaroon_root_key"))
+	if err != nil {
+		log.Panic(err)
+	}
+
 	// Init http server
-	server = web.NewServer(viper.GetString("macaroon.location"), mongoClient, acct.(*account.AccountV2))
+	server = web.NewServer(mongoClient, acct.(*account.AccountV2), viper.GetString("server.endpoint"), rootKey)
 	log.WithField("prefix", "init").Info("Initialized http server")
 
 	// Remove initial context
