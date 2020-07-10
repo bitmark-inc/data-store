@@ -4,10 +4,11 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/bitmark-inc/bitmark-sdk-go/account"
-	"github.com/bitmark-inc/data-store/store"
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/mongo"
+
+	"github.com/bitmark-inc/bitmark-sdk-go/account"
+	"github.com/bitmark-inc/data-store/store"
 )
 
 // Server to run a http server instance

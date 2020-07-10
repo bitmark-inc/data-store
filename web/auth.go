@@ -6,9 +6,10 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/bitmark-inc/bitmark-sdk-go/account"
 	"github.com/gin-gonic/gin"
 	"gopkg.in/macaroon.v2"
+
+	"github.com/bitmark-inc/bitmark-sdk-go/account"
 )
 
 func (s *Server) Register(c *gin.Context) {

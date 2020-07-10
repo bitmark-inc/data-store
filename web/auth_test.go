@@ -11,13 +11,14 @@ import (
 	"testing"
 	"time"
 
-	bitmarksdk "github.com/bitmark-inc/bitmark-sdk-go"
-	sdk "github.com/bitmark-inc/bitmark-sdk-go"
-	"github.com/bitmark-inc/bitmark-sdk-go/account"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/macaroon.v2"
+
+	bitmarksdk "github.com/bitmark-inc/bitmark-sdk-go"
+	sdk "github.com/bitmark-inc/bitmark-sdk-go"
+	"github.com/bitmark-inc/bitmark-sdk-go/account"
 )
 
 func TestRegister(t *testing.T) {
