@@ -20,6 +20,11 @@ func (p *PDS) RatePOIResource() gin.HandlerFunc {
 			return
 		}
 
+		if params.Ratings == nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "no rating provided"})
+			return
+		}
+
 		err := p.dataStorePool.Account(accountNumber).SetPOIRating(c, poiID, params.Ratings)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -39,6 +44,10 @@ func (p *PDS) GetPOIResource() gin.HandlerFunc {
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
+		}
+
+		if r == nil {
+			r = map[string]float64{}
 		}
 
 		c.JSON(http.StatusOK, r)
