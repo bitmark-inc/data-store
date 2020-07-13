@@ -5,6 +5,7 @@ go 1.13
 require (
 	github.com/bitmark-inc/bitmark-sdk-go v0.3.0
 	github.com/frankban/quicktest v1.7.3 // indirect
+	github.com/getsentry/sentry-go v0.5.1
 	github.com/gin-gonic/gin v1.6.1
 	github.com/golang/protobuf v1.4.2 // indirect
 	github.com/klauspost/compress v1.10.7 // indirect
@@ -35,6 +36,5 @@ require (
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
 	gopkg.in/ini.v1 v1.57.0 // indirect
 	gopkg.in/macaroon.v2 v2.1.0
-	gopkg.in/mgo.v2 v2.0.0-20180705113604-9856a29383ce
 	gopkg.in/yaml.v3 v3.0.0-20200603094226-e3079894b1e8 // indirect
 )
