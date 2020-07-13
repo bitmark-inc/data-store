@@ -24,7 +24,12 @@ var (
 func (s *Server) checkMacaroon() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		auth := c.GetHeader("Authorization")
-		token := strings.Split(auth, "Bearer ")[1]
+		bearerTexts := strings.Split(auth, "Bearer ")
+		if len(bearerTexts) != 2 {
+			abortWithErrorMessage(c, http.StatusBadRequest, errorResponse{Message: "invalid Authorization header"})
+			return
+		}
+		token := bearerTexts[1]
 
 		var m macaroon.Macaroon
 		data, err := hex.DecodeString(token)
