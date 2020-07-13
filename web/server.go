@@ -5,17 +5,14 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/bitmark-inc/bitmark-sdk-go/account"
-	"github.com/bitmark-inc/data-store/store"
 )
 
 // Server to run a http server instance
 type Server struct {
+	router *gin.Engine
 	server *http.Server
-
-	dataStorePool store.DataStorePool
 
 	bitmarkAccount *account.AccountV2
 
@@ -24,38 +21,33 @@ type Server struct {
 }
 
 // NewServer new instance of server
-func NewServer(mongoClient *mongo.Client, acct *account.AccountV2, endpoint string, macaroonRootKey []byte) *Server {
+func NewServer(acct *account.AccountV2, endpoint string, macaroonRootKey []byte) *Server {
+	r := gin.New()
+	r.Use(gin.Recovery())
+
 	return &Server{
-		dataStorePool:    store.NewMongodbDataPool(mongoClient),
+		router:           r,
 		bitmarkAccount:   acct,
 		macaroonLocation: endpoint,
 		macaroonRootKey:  macaroonRootKey,
 	}
 }
 
+func (s *Server) Route(httpMethod, path string, handlers ...gin.HandlerFunc) {
+	s.router.Handle(httpMethod, path, handlers...)
+}
+
 // Run to run the server
 func (s *Server) Run(addr string) error {
+	// TODO:
+	s.router.POST("/register", s.Register)
+
 	s.server = &http.Server{
 		Addr:    addr,
-		Handler: s.setupRouter(),
+		Handler: s.router,
 	}
 
 	return s.server.ListenAndServe()
-}
-
-func (s *Server) setupRouter() *gin.Engine {
-	r := gin.New()
-	r.Use(gin.Recovery())
-
-	apiRoute := r.Group("/api")
-	apiRoute.POST("/register", s.Register)
-
-	poiRatingRoute := r.Group("/poi_rating")
-	poiRatingRoute.Use(s.checkMacaroon())
-	poiRatingRoute.GET("/:poi_id", s.GetPOIRating)
-	poiRatingRoute.PUT("/:poi_id", s.SetPOIRating)
-
-	return r
 }
 
 // Shutdown terminates the web server.

@@ -20,6 +20,8 @@ import (
 
 	bitmarksdk "github.com/bitmark-inc/bitmark-sdk-go"
 	"github.com/bitmark-inc/bitmark-sdk-go/account"
+	"github.com/bitmark-inc/data-store/pds"
+	"github.com/bitmark-inc/data-store/store"
 	"github.com/bitmark-inc/data-store/web"
 )
 
@@ -102,17 +104,6 @@ func main() {
 
 	initLog()
 
-	// Sentry
-	// if err := sentry.Init(sentry.ClientOptions{
-	// 	Dsn:              viper.GetString("sentry.dsn"),
-	// 	AttachStacktrace: true,
-	// 	Environment:      viper.GetString("sentry.environment"),
-	// 	Dist:             viper.GetString("sentry.dist"),
-	// }); err != nil {
-	// 	log.Error(err)
-	// }
-	// log.WithField("prefix", "init").Info("Initialized sentry")
-
 	// Init Bitmark SDK
 	httpClient := &http.Client{
 		Timeout: 10 * time.Second,
@@ -145,8 +136,13 @@ func main() {
 		log.Panic(err)
 	}
 
+	pds := pds.New(store.NewMongodbDataPool(mongoClient))
+
 	// Init http server
-	server = web.NewServer(mongoClient, acct.(*account.AccountV2), viper.GetString("server.endpoint"), rootKey)
+	server = web.NewServer(acct.(*account.AccountV2), viper.GetString("server.endpoint"), rootKey)
+	server.Route("GET", "/poi_rating/:poi_id", server.CheckMacaroon(), pds.GetPOIResource())
+	server.Route("POST", "/poi_rating/:poi_id", server.CheckMacaroon(), pds.RatePOIResource())
+
 	log.WithField("prefix", "init").Info("Initialized http server")
 
 	// Remove initial context
