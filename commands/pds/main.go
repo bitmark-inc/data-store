@@ -126,7 +126,7 @@ func main() {
 		log.Panicf("connect mongo database with error: %s", err)
 	}
 
-	acct, err := account.FromSeed(viper.GetString("account.seed"))
+	acct, err := account.FromSeed(viper.GetString("server.bitmark_account_seed"))
 	if err != nil {
 		log.Panic(err)
 	}
