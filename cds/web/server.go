@@ -65,7 +65,7 @@ func (s *Server) setupRouter() *gin.Engine {
 
 	poiRatingRoute := r.Group("/poi_rating")
 	poiRatingRoute.GET("/:poi_id", s.GetPOISummarizedRating)
-	poiRatingRoute.POST("/:poi_id", s.AddPOIRating)
+	poiRatingRoute.PUT("/:poi_id", s.SetPOIRating)
 
 	return r
 }

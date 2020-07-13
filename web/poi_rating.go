@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func (s *Server) RatePOIResource(c *gin.Context) {
+func (s *Server) SetPOIRating(c *gin.Context) {
 	accountNumber := c.GetString("account_number")
 	poiID := c.Param("poi_id")
 
@@ -19,7 +19,7 @@ func (s *Server) RatePOIResource(c *gin.Context) {
 		return
 	}
 
-	err := s.dataStorePool.Account(accountNumber).RatePOIResource(c, poiID, params.Ratings)
+	err := s.dataStorePool.Account(accountNumber).SetPOIRating(c, poiID, params.Ratings)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -28,11 +28,11 @@ func (s *Server) RatePOIResource(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"result": "ok"})
 }
 
-func (s *Server) GetPOIResource(c *gin.Context) {
+func (s *Server) GetPOIRating(c *gin.Context) {
 	accountNumber := c.GetString("account_number")
 	poiID := c.Param("poi_id")
 
-	r, err := s.dataStorePool.Account(accountNumber).GetPOIResource(c, poiID)
+	r, err := s.dataStorePool.Account(accountNumber).GetPOIRating(c, poiID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

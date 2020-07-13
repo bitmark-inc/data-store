@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func (s *Server) AddPOIRating(c *gin.Context) {
+func (s *Server) SetPOIRating(c *gin.Context) {
 	accountNumber := c.GetString("account_number")
 	poiID := c.Param("poi_id")
 
@@ -19,7 +19,7 @@ func (s *Server) AddPOIRating(c *gin.Context) {
 		return
 	}
 
-	err := s.dataStorePool.Community().AddPOIRating(c, accountNumber, poiID, params.Ratings)
+	err := s.dataStorePool.Community().SetPOIRating(c, accountNumber, poiID, params.Ratings)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

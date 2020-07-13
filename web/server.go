@@ -52,8 +52,8 @@ func (s *Server) setupRouter() *gin.Engine {
 
 	poiRatingRoute := r.Group("/poi_rating")
 	poiRatingRoute.Use(s.checkMacaroon())
-	poiRatingRoute.GET("/:poi_id", s.GetPOIResource)
-	poiRatingRoute.POST("", s.RatePOIResource)
+	poiRatingRoute.GET("/:poi_id", s.GetPOIRating)
+	poiRatingRoute.PUT("/:poi_id", s.SetPOIRating)
 
 	return r
 }
