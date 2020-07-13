@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/hex"
 	"flag"
 	"fmt"
 	"net/http"
@@ -18,7 +19,10 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 
 	bitmarksdk "github.com/bitmark-inc/bitmark-sdk-go"
-	"github.com/bitmark-inc/data-store/cds/web"
+	"github.com/bitmark-inc/bitmark-sdk-go/account"
+	"github.com/bitmark-inc/data-store/cds"
+	"github.com/bitmark-inc/data-store/store"
+	"github.com/bitmark-inc/data-store/web"
 )
 
 var (
@@ -100,17 +104,6 @@ func main() {
 
 	initLog()
 
-	// Sentry
-	// if err := sentry.Init(sentry.ClientOptions{
-	// 	Dsn:              viper.GetString("sentry.dsn"),
-	// 	AttachStacktrace: true,
-	// 	Environment:      viper.GetString("sentry.environment"),
-	// 	Dist:             viper.GetString("sentry.dist"),
-	// }); err != nil {
-	// 	log.Error(err)
-	// }
-	// log.WithField("prefix", "init").Info("Initialized sentry")
-
 	// Init Bitmark SDK
 	httpClient := &http.Client{
 		Timeout: 10 * time.Second,
@@ -133,8 +126,22 @@ func main() {
 		log.Panicf("connect mongo database with error: %s", err)
 	}
 
+	acct, err := account.FromSeed(viper.GetString("server.bitmark_account_seed"))
+	if err != nil {
+		log.Panic(err)
+	}
+
+	rootKey, err := hex.DecodeString(viper.GetString("server.macaroon_root_key"))
+	if err != nil {
+		log.Panic(err)
+	}
+
+	cds := cds.New(store.NewMongodbDataPool(mongoClient))
+
 	// Init http server
-	server = web.NewServer(mongoClient)
+	server = web.NewServer(acct.(*account.AccountV2), viper.GetString("server.endpoint"), rootKey)
+	server.Route("PUT", "/poi_rating/:poi_id", server.CheckMacaroon(), cds.SetPOIRating())
+	server.Route("GET", "/poi_rating/:poi_id", server.CheckMacaroon(), cds.GetPOISummarizedRating())
 	log.WithField("prefix", "init").Info("Initialized http server")
 
 	// Remove initial context

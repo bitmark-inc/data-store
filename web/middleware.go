@@ -21,7 +21,7 @@ var (
 	}
 )
 
-func (s *Server) checkMacaroon() gin.HandlerFunc {
+func (s *Server) CheckMacaroon() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		auth := c.GetHeader("Authorization")
 		bearerTexts := strings.Split(auth, "Bearer ")
