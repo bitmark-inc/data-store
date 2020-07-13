@@ -20,12 +20,12 @@ type DataStorePool interface {
 }
 
 type PersonalDataStore interface {
-	RatePOIResource(ctx context.Context, poiID string, ratings map[string]float64) error
-	GetPOIResource(ctx context.Context, poiID string) (map[string]float64, error)
+	SetPOIRating(ctx context.Context, poiID string, ratings map[string]float64) error
+	GetPOIRating(ctx context.Context, poiID string) (map[string]float64, error)
 }
 
 type CommunityDataStore interface {
-	AddPOIRating(ctx context.Context, accountNumber, poiID string, ratings map[string]float64) error
+	SetPOIRating(ctx context.Context, accountNumber, poiID string, ratings map[string]float64) error
 	GetPOISummarizedRating(ctx context.Context, poiID string) (POISummarizedRating, error)
 }
 

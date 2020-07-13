@@ -13,7 +13,7 @@ type POIResourceRating struct {
 	Ratings map[string]float64 `bson:"ratings"`
 }
 
-func (m *mongoAccountStore) RatePOIResource(ctx context.Context, poiID string, ratings map[string]float64) error {
+func (m *mongoAccountStore) SetPOIRating(ctx context.Context, poiID string, ratings map[string]float64) error {
 
 	_, err := m.Resource("poi_ratings").UpdateOne(ctx,
 		bson.M{"id": poiID},
@@ -29,7 +29,7 @@ func (m *mongoAccountStore) RatePOIResource(ctx context.Context, poiID string, r
 	return nil
 }
 
-func (m *mongoAccountStore) GetPOIResource(ctx context.Context, poiID string) (map[string]float64, error) {
+func (m *mongoAccountStore) GetPOIRating(ctx context.Context, poiID string) (map[string]float64, error) {
 	var rating POIResourceRating
 
 	if err := m.Resource("poi_ratings").FindOne(ctx, bson.M{"id": poiID}).Decode(&rating); err != nil {
@@ -39,7 +39,7 @@ func (m *mongoAccountStore) GetPOIResource(ctx context.Context, poiID string) (m
 	return rating.Ratings, nil
 }
 
-func (m *mongoCommunityStore) AddPOIRating(ctx context.Context, accountNumber, poiID string, ratings map[string]float64) error {
+func (m *mongoCommunityStore) SetPOIRating(ctx context.Context, accountNumber, poiID string, ratings map[string]float64) error {
 	_, err := m.Resource("poi_ratings").UpdateOne(ctx,
 		bson.M{"id": poiID, "account_number": accountNumber},
 		bson.M{
