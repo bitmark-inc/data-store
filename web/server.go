@@ -39,8 +39,8 @@ func (s *Server) Route(httpMethod, path string, handlers ...gin.HandlerFunc) {
 
 // Run to run the server
 func (s *Server) Run(addr string) error {
-	// TODO: pds and cds could share the same registration function for now
 	s.router.POST("/register", s.Register)
+	s.router.GET("/information", s.Info)
 
 	s.server = &http.Server{
 		Addr:    addr,
