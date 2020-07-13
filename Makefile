@@ -1,6 +1,22 @@
+.PHONY: pds cds
 dist =
 
 default: build
+
+
+pds:
+	go build -o bin/pds commands/pds/main.go
+
+cds:
+	go build -o bin/cds commands/cds/main.go
+
+run-pds: pds
+	./bin/pds -c  commands/pds/config.yaml
+
+run-cds: cds
+	./bin/cds -c  commands/cds/config.yaml
+
+bin: pds cds
 
 build-pds:
 ifndef dist
