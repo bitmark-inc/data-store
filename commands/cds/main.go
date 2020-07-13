@@ -148,6 +148,5 @@ func main() {
 	initialCtx = nil
 	cancelInitialization = nil
 
-	// log.Fatal(server.Run(":" + viper.GetString("server.port")))
-	log.Fatal(server.Run(":8080"))
+	log.Fatal(server.Run(":" + viper.GetString("server.port")))
 }
