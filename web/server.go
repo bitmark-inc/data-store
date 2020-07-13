@@ -11,6 +11,9 @@ import (
 
 // Server to run a http server instance
 type Server struct {
+	// determine whether to trace requests
+	tracing bool
+
 	router *gin.Engine
 	server *http.Server
 
@@ -21,11 +24,12 @@ type Server struct {
 }
 
 // NewServer new instance of server
-func NewServer(acct *account.AccountV2, endpoint string, macaroonRootKey []byte) *Server {
+func NewServer(tracing bool, acct *account.AccountV2, endpoint string, macaroonRootKey []byte) *Server {
 	r := gin.New()
 	r.Use(gin.Recovery())
 
 	return &Server{
+		tracing:          tracing,
 		router:           r,
 		bitmarkAccount:   acct,
 		macaroonLocation: endpoint,
@@ -39,6 +43,7 @@ func (s *Server) Route(httpMethod, path string, handlers ...gin.HandlerFunc) {
 
 // Run to run the server
 func (s *Server) Run(addr string) error {
+	s.router.Use(s.DumpRequest)
 	s.router.POST("/register", s.Register)
 	s.router.GET("/information", s.Info)
 
