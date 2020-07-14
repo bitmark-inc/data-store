@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 func (p *PDS) RatePOIResource() gin.HandlerFunc {
@@ -42,14 +43,16 @@ func (p *PDS) GetPOIResource() gin.HandlerFunc {
 
 		r, err := p.dataStorePool.Account(accountNumber).GetPOIRating(c, poiID)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
+			if err != mongo.ErrNoDocuments {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
 		}
 
 		if r == nil {
 			r = map[string]float64{}
 		}
 
-		c.JSON(http.StatusOK, r)
+		c.JSON(http.StatusOK, gin.H{"ratings": r})
 	}
 }
