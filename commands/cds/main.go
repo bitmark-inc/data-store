@@ -143,7 +143,7 @@ func main() {
 	server.Route("PUT", "/poi_rating/:poi_id", server.CheckMacaroon(), cds.SetPOIRating())
 	server.Route("GET", "/poi_rating/:poi_id", server.CheckMacaroon(), cds.GetPOISummarizedRatings)
 	server.Route("GET", "/poi_rating", server.CheckMacaroon(), cds.GetPOISummarizedRatings)
-	server.Route("POST", "/symptom-daily-reports", server.CheckMacaroon(), cds.AddSymptomDailyReports())
+	server.Route("POST", "/symptom-daily-reports", server.CheckMacaroon(), cds.AddSymptomDailyReports)
 	server.Route("GET", "/report-items", server.CheckMacaroon(), cds.GetSymptomReportItems)
 	log.WithField("prefix", "init").Info("Initialized http server")
 

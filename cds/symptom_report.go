@@ -10,24 +10,22 @@ import (
 	"github.com/bitmark-inc/data-store/store"
 )
 
-func (cds *CDS) AddSymptomDailyReports() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		var body struct {
-			Reports []store.SymptomDailyReport `json:"reports"`
-		}
-
-		if err := c.Bind(&body); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-
-		if err := cds.dataStorePool.Community().AddSymptomDailyReports(c, body.Reports); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
-
-		c.JSON(http.StatusOK, gin.H{"result": "ok"})
+func (cds *CDS) AddSymptomDailyReports(c *gin.Context) {
+	var body struct {
+		Reports []store.SymptomDailyReport `json:"reports"`
 	}
+
+	if err := c.Bind(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := cds.dataStorePool.Community().AddSymptomDailyReports(c, body.Reports); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"result": "ok"})
 }
 
 type reportItemQueryParams struct {
