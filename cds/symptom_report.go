@@ -13,7 +13,7 @@ import (
 func (cds *CDS) AddSymptomDailyReports() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var body struct {
-			Reports []*store.SymptomDailyReport `json:"reports"`
+			Reports []store.SymptomDailyReport `json:"reports"`
 		}
 
 		if err := c.Bind(&body); err != nil {
@@ -43,44 +43,42 @@ type reportItem struct {
 	Distribution map[string]int `json:"distribution"`
 }
 
-func (cds *CDS) GetSymptomReportItems() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		var params reportItemQueryParams
-		if err := c.Bind(&params); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-		start, err := time.Parse(time.RFC3339, params.Start)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-		end, err := time.Parse(time.RFC3339, params.End)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-		gap := start.Sub(end)
-		prevStart := start.Add(gap)
-		prevEnd := start
-
-		current, err := cds.dataStorePool.Community().GetSymptomReportItems(c, start.Format("2006-01-02"), end.Format("2006-01-02"))
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
-		previous, err := cds.dataStorePool.Community().GetSymptomReportItems(c, prevStart.Format("2006-01-02"), prevEnd.Format("2006-01-02"))
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
-
-		results := gatherReportItemsWithDistribution(current, previous, false)
-		items := getReportItemsForDisplay(results, func(symptomID string) string {
-			return symptomID
-		})
-		c.JSON(http.StatusOK, gin.H{"report_items": items})
+func (cds *CDS) GetSymptomReportItems(c *gin.Context) {
+	var params reportItemQueryParams
+	if err := c.Bind(&params); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
 	}
+	start, err := time.Parse(time.RFC3339, params.Start)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	end, err := time.Parse(time.RFC3339, params.End)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	gap := start.Sub(end)
+	prevStart := start.Add(gap)
+	prevEnd := start
+
+	current, err := cds.dataStorePool.Community().GetSymptomReportItems(c, start.Format("2006-01-02"), end.Format("2006-01-02"))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	previous, err := cds.dataStorePool.Community().GetSymptomReportItems(c, prevStart.Format("2006-01-02"), prevEnd.Format("2006-01-02"))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	results := gatherReportItemsWithDistribution(current, previous, false)
+	items := getReportItemsForDisplay(results, func(symptomID string) string {
+		return symptomID
+	})
+	c.JSON(http.StatusOK, gin.H{"report_items": items})
 }
 
 func gatherReportItemsWithDistribution(currentBuckets, previousBuckets map[string][]store.Bucket, avg bool) map[string]*reportItem {
@@ -142,13 +140,11 @@ func getReportItemsForDisplay(entries map[string]*reportItem, getNameFunc func(s
 		results = append(results, entry)
 	}
 	sort.SliceStable(results, func(i, j int) bool {
-		if *results[i].Value > *results[j].Value {
-			return true
+		if *results[i].Value == *results[j].Value {
+			return results[i].Name < results[j].Name
+		} else {
+			return *results[i].Value > *results[j].Value
 		}
-		if *results[i].Value < *results[j].Value {
-			return false
-		}
-		return results[i].Name < results[j].Name
 	})
 	return results
 }

@@ -16,7 +16,7 @@ type SymptomDailyReport struct {
 	} `json:"symptoms"`
 }
 
-func (m *mongoCommunityStore) AddSymptomDailyReports(ctx context.Context, reports []*SymptomDailyReport) error {
+func (m *mongoCommunityStore) AddSymptomDailyReports(ctx context.Context, reports []SymptomDailyReport) error {
 	opts := options.Update().SetUpsert(true)
 	for _, report := range reports {
 		filter := bson.M{"date": report.Date}
