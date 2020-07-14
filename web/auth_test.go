@@ -32,7 +32,7 @@ func TestRegister(t *testing.T) {
 	serverAccount, _ := account.FromSeed("9J87Ga31xgbhPMqmRucMavUkv3zToPdBr")
 
 	// set up server
-	s := NewServer(serverAccount.(*account.AccountV2), "localhost", []byte("ROOT KEY"))
+	s := NewServer(false, serverAccount.(*account.AccountV2), "localhost", []byte("ROOT KEY"))
 	r := gin.Default()
 	r.POST("/register", s.Register)
 	testServer := httptest.NewServer(r)
