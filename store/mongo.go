@@ -26,7 +26,7 @@ type PersonalDataStore interface {
 
 type CommunityDataStore interface {
 	SetPOIRating(ctx context.Context, accountNumber, poiID string, ratings map[string]float64) error
-	GetPOISummarizedRating(ctx context.Context, poiID string) (POISummarizedRating, error)
+	GetPOISummarizedRatings(ctx context.Context, poiIDs []string) (map[string]POISummarizedRating, error)
 }
 
 // mongodbDataPool is an implementation of DataStorePool.

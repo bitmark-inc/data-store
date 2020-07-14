@@ -55,15 +55,16 @@ func (m *mongoCommunityStore) SetPOIRating(ctx context.Context, accountNumber, p
 }
 
 type POISummarizedRating struct {
+	ID            string             `bson:"_id" json:"id"`
 	AverageRating float64            `bson:"rating_avg" json:"rating_avg"`
 	Ratings       map[string]float64 `bson:"ratings" json:"ratings"`
 }
 
-func (m *mongoCommunityStore) GetPOISummarizedRating(ctx context.Context, poiID string) (POISummarizedRating, error) {
-	log.WithField("id", poiID).Info("get poi rating summary")
+func (m *mongoCommunityStore) GetPOISummarizedRatings(ctx context.Context, poiIDs []string) (map[string]POISummarizedRating, error) {
+	log.WithField("ids", poiIDs).Info("get poi rating summary")
 	cursor, err := m.Resource("poi_ratings").Aggregate(ctx,
 		mongo.Pipeline{
-			AggregationMatch(bson.M{"id": poiID}),
+			AggregationMatch(bson.M{"id": bson.M{"$in": poiIDs}}),
 			AggregationAddFields(bson.M{
 				"rating": bson.M{"$objectToArray": "$ratings"},
 			}),
@@ -86,18 +87,18 @@ func (m *mongoCommunityStore) GetPOISummarizedRating(ctx context.Context, poiID 
 			}),
 		})
 	if err != nil {
-		return POISummarizedRating{}, err
+		return nil, err
 	}
 
-	var rating POISummarizedRating
-	if cursor.Next(ctx) {
-		err := cursor.Decode(&rating)
-		if err != nil {
-			return POISummarizedRating{}, err
+	ratings := map[string]POISummarizedRating{}
+
+	for cursor.Next(ctx) {
+		var r POISummarizedRating
+		if err := cursor.Decode(&r); err != nil {
+			return nil, err
 		}
-	} else {
-		return POISummarizedRating{}, nil
+		ratings[r.ID] = r
 	}
 
-	return rating, nil
+	return ratings, nil
 }
