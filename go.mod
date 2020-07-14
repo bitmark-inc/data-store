@@ -6,6 +6,7 @@ require (
 	github.com/bitmark-inc/bitmark-sdk-go v0.3.0
 	github.com/frankban/quicktest v1.7.3 // indirect
 	github.com/getsentry/sentry-go v0.5.1
+	github.com/gin-contrib/cors v1.3.1
 	github.com/gin-gonic/gin v1.6.1
 	github.com/golang/protobuf v1.4.2 // indirect
 	github.com/klauspost/compress v1.10.7 // indirect

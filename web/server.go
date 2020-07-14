@@ -3,7 +3,9 @@ package web
 import (
 	"context"
 	"net/http"
+	"time"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 
 	"github.com/bitmark-inc/bitmark-sdk-go/account"
@@ -27,6 +29,13 @@ type Server struct {
 func NewServer(tracing bool, acct *account.AccountV2, endpoint string, macaroonRootKey []byte) *Server {
 	r := gin.New()
 	r.Use(gin.Recovery())
+	r.Use(cors.New(cors.Config{
+		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD"},
+		AllowHeaders:     []string{"*"},
+		AllowCredentials: true,
+		AllowAllOrigins:  true,
+		MaxAge:           12 * time.Hour,
+	}))
 
 	return &Server{
 		tracing:          tracing,
