@@ -44,7 +44,7 @@ type Bucket struct {
 	Value int    `bson:"value" json:"value"`
 }
 
-func (m *mongoCommunityStore) GetSymptomReports(ctx context.Context, start, end string) (map[string][]Bucket, error) {
+func (m *mongoCommunityStore) GetSymptomReportItems(ctx context.Context, start, end string) (map[string][]Bucket, error) {
 	pipeline := mongo.Pipeline{
 		AggregationMatch(bson.M{
 			"date": bson.M{
