@@ -42,5 +42,8 @@ endif
 	docker push 083397868157.dkr.ecr.ap-northeast-1.amazonaws.com/data-store:pds-$(dist)
 	docker push 083397868157.dkr.ecr.ap-northeast-1.amazonaws.com/data-store:cds-$(dist)
 
+test:
+	go test ./...
+
 clean:
 	rm -r bin

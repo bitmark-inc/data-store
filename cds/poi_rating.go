@@ -22,7 +22,7 @@ func (cds *CDS) SetPOIRating() gin.HandlerFunc {
 			return
 		}
 
-		err := cds.dataStorePool.Community().SetPOIRating(c, accountNumber, poiID, params.Ratings)
+		err := cds.dataStorePool.Community("").SetPOIRating(c, accountNumber, poiID, params.Ratings)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -37,7 +37,7 @@ func (cds *CDS) GetPOISummarizedRatings(c *gin.Context) {
 	var result map[string]store.POISummarizedRating
 	var err error
 	if poiID != "" {
-		result, err = cds.dataStorePool.Community().GetPOISummarizedRatings(c, []string{poiID})
+		result, err = cds.dataStorePool.Community("").GetPOISummarizedRatings(c, []string{poiID})
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -54,7 +54,7 @@ func (cds *CDS) GetPOISummarizedRatings(c *gin.Context) {
 
 		poiIDs := strings.Split(params.POIIDs, ",")
 
-		result, err = cds.dataStorePool.Community().GetPOISummarizedRatings(c, poiIDs)
+		result, err = cds.dataStorePool.Community("").GetPOISummarizedRatings(c, poiIDs)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return

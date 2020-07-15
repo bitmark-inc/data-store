@@ -1,2 +1,4 @@
 bin
 commands/**/config.yaml
+
+cover.out

@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"fmt"
 
 	log "github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -16,7 +17,7 @@ type DataStorePool interface {
 	Account(accountNumber string) PersonalDataStore
 
 	// Community will return a community data store.
-	Community() CommunityDataStore
+	Community(prefix string) CommunityDataStore
 }
 
 type PersonalDataStore interface {
@@ -52,9 +53,10 @@ func (m mongodbDataPool) Account(accountNumber string) PersonalDataStore {
 }
 
 // Community returns a community data store.
-func (m mongodbDataPool) Community() CommunityDataStore {
+func (m mongodbDataPool) Community(prefix string) CommunityDataStore {
+	dbName := fmt.Sprintf("%scommunity", prefix)
 	return &mongoCommunityStore{
-		db: m.client.Database("community"),
+		db: m.client.Database(dbName),
 	}
 }
 
