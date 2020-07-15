@@ -140,6 +140,7 @@ func main() {
 
 	// Init http server
 	server = web.NewServer(viper.GetBool("server.tracing"), acct.(*account.AccountV2), viper.GetString("server.endpoint"), rootKey)
+	server.Middleware(server.DumpRequest)
 	server.Route("PUT", "/poi_rating/:poi_id", server.CheckMacaroon(), cds.SetPOIRating())
 	server.Route("GET", "/poi_rating/:poi_id", server.CheckMacaroon(), cds.GetPOISummarizedRatings)
 	server.Route("GET", "/poi_rating", server.CheckMacaroon(), cds.GetPOISummarizedRatings)

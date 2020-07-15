@@ -46,13 +46,16 @@ func NewServer(tracing bool, acct *account.AccountV2, endpoint string, macaroonR
 	}
 }
 
+func (s *Server) Middleware(middleware ...gin.HandlerFunc) {
+	s.router.Use(middleware...)
+}
+
 func (s *Server) Route(httpMethod, path string, handlers ...gin.HandlerFunc) {
 	s.router.Handle(httpMethod, path, handlers...)
 }
 
 // Run to run the server
 func (s *Server) Run(addr string) error {
-	s.router.Use(s.DumpRequest)
 	s.router.POST("/register", s.Register)
 	s.router.GET("/information", s.Info)
 
