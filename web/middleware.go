@@ -1,7 +1,6 @@
 package web
 
 import (
-	"encoding/base64"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -32,9 +31,9 @@ func (s *Server) CheckMacaroon() gin.HandlerFunc {
 		token := bearerTexts[1]
 
 		var m macaroon.Macaroon
-		data, err := base64.URLEncoding.DecodeString(token)
+		data, err := macaroon.Base64Decode([]byte(token))
 		if err != nil {
-			abortWithErrorMessage(c, http.StatusBadRequest, errorResponse{Message: "macaroon not base64url encoded"})
+			abortWithErrorMessage(c, http.StatusBadRequest, errorResponse{Message: "macaroon not correctly encoded"})
 			return
 		}
 		if err := m.UnmarshalBinary(data); err != nil {
