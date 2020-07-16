@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
@@ -14,11 +15,10 @@ type POIResourceRating struct {
 }
 
 func (m *mongoAccountStore) SetPOIRating(ctx context.Context, poiID string, ratings map[string]float64) error {
-
 	_, err := m.Resource("poi_ratings").UpdateOne(ctx,
 		bson.M{"id": poiID},
 		bson.M{
-			"$set":         bson.M{"ratings": ratings},
+			"$set":         bson.M{"ratings": ratings, "timestamp": time.Now().UTC().UnixNano() / int64(time.Millisecond)},
 			"$setOnInsert": bson.M{"id": poiID},
 		},
 		options.Update().SetUpsert(true))
@@ -43,7 +43,7 @@ func (m *mongoCommunityStore) SetPOIRating(ctx context.Context, accountNumber, p
 	_, err := m.Resource("poi_ratings").UpdateOne(ctx,
 		bson.M{"id": poiID, "account_number": accountNumber},
 		bson.M{
-			"$set":         bson.M{"ratings": ratings},
+			"$set":         bson.M{"ratings": ratings, "timestamp": time.Now().UTC().UnixNano() / int64(time.Millisecond)},
 			"$setOnInsert": bson.M{"id": poiID, "account_number": accountNumber},
 		},
 		options.Update().SetUpsert(true))
@@ -54,10 +54,16 @@ func (m *mongoCommunityStore) SetPOIRating(ctx context.Context, accountNumber, p
 	return nil
 }
 
+type RatingInfo struct {
+	Score  float64 `bson:"score" json:"score"`
+	Counts int     `bson:"counts" json:"counts"`
+}
+
 type POISummarizedRating struct {
-	ID            string             `bson:"_id" json:"id"`
-	AverageRating float64            `bson:"rating_avg" json:"rating_avg"`
-	Ratings       map[string]float64 `bson:"ratings" json:"ratings"`
+	ID            string                `bson:"_id" json:"id"`
+	LastUpdated   int64                 `bson:"last_updated" json:"last_updated"`
+	AverageRating float64               `bson:"rating_avg" json:"rating_avg"`
+	Ratings       map[string]RatingInfo `bson:"ratings" json:"ratings"`
 }
 
 func (m *mongoCommunityStore) GetPOISummarizedRatings(ctx context.Context, poiIDs []string) (map[string]POISummarizedRating, error) {
@@ -74,12 +80,18 @@ func (m *mongoCommunityStore) GetPOISummarizedRatings(ctx context.Context, poiID
 				"id": "$id",
 			}, bson.D{
 				bson.E{"v", bson.M{"$avg": "$rating.v"}},
+				bson.E{"c", bson.M{"$sum": 1}},
+				bson.E{"last_updated", bson.M{"$max": "$timestamp"}},
 			}),
 			AggregationGroup("$_id.id", bson.D{
+				bson.E{"last_updated", bson.M{"$max": "$last_updated"}},
 				bson.E{"rating_avg", bson.M{"$avg": "$v"}},
 				bson.E{"ratings", bson.M{"$push": bson.M{
 					"k": "$_id.k",
-					"v": "$v",
+					"v": bson.M{
+						"score":  "$v",
+						"counts": bson.M{"$sum": "$c"},
+					},
 				}}},
 			}),
 			AggregationAddFields(bson.M{

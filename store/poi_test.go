@@ -171,13 +171,18 @@ func (s *AccountPOITestSuite) TestCommunityGetPOIRating() {
 	s.NoError(err)
 	s.Len(ratings, 2)
 	s.Equal(2.5, ratings[testGetCommunityRatingID1].AverageRating)
-	s.Equal(2.0, ratings[testGetCommunityRatingID1].Ratings["a"])
-	s.Equal(3.0, ratings[testGetCommunityRatingID1].Ratings["b"])
+	s.Equal(2.0, ratings[testGetCommunityRatingID1].Ratings["a"].Score)
+	s.Equal(3.0, ratings[testGetCommunityRatingID1].Ratings["b"].Score)
+	s.Equal(2, ratings[testGetCommunityRatingID1].Ratings["a"].Counts)
+	s.Equal(2, ratings[testGetCommunityRatingID1].Ratings["b"].Counts)
 
 	s.Equal(3.0, ratings[testGetCommunityRatingID2].AverageRating)
-	s.Equal(3.0, ratings[testGetCommunityRatingID2].Ratings["a"])
-	s.Equal(3.0, ratings[testGetCommunityRatingID2].Ratings["b"])
-	s.Equal(3.0, ratings[testGetCommunityRatingID2].Ratings["c"])
+	s.Equal(3.0, ratings[testGetCommunityRatingID2].Ratings["a"].Score)
+	s.Equal(3.0, ratings[testGetCommunityRatingID2].Ratings["b"].Score)
+	s.Equal(3.0, ratings[testGetCommunityRatingID2].Ratings["c"].Score)
+	s.Equal(2, ratings[testGetCommunityRatingID2].Ratings["a"].Counts)
+	s.Equal(2, ratings[testGetCommunityRatingID2].Ratings["b"].Counts)
+	s.Equal(2, ratings[testGetCommunityRatingID2].Ratings["b"].Counts)
 }
 
 func TestAccountPOI(t *testing.T) {
