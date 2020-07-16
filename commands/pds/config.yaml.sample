@@ -3,6 +3,7 @@ server:
   port: 8080
   macaroon_root_key: <MACAROON_ROOT_KEY>
   bitmark_account_seed: <BITMARK_ACCOUNT_SEED>
+  store_prefix: "autonomy_"
 bitmarksdk:
   token: <API_TOKEN>
   network: testnet

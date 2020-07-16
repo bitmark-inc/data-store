@@ -11,8 +11,12 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+const (
+	TestDBPrefix = "testcase_"
+)
+
 var (
-	defaultRatingAccount = "testcase_account_default"
+	defaultRatingAccount = "account_default"
 	testGetPOIRatingID   = "test1234"
 	defaultRating        = map[string]interface{}{
 		"id":      testGetPOIRatingID,
@@ -95,7 +99,7 @@ func (s *AccountPOITestSuite) SetupTest() {}
 
 func (s *AccountPOITestSuite) LoadFixtures() error {
 	ctx := context.Background()
-	if _, err := s.mongoClient.Database("testcase_account_default").Collection("poi_ratings").InsertOne(ctx, defaultRating); err != nil {
+	if _, err := s.mongoClient.Database(TestDBPrefix+defaultRatingAccount).Collection("poi_ratings").InsertOne(ctx, defaultRating); err != nil {
 		return err
 	}
 	if _, err := s.mongoClient.Database("testcase_community").Collection("poi_ratings").InsertMany(ctx, defaultCommunityRatings); err != nil {
@@ -108,7 +112,7 @@ func (s *AccountPOITestSuite) TestAccountSetPOIRating() {
 	ctx := context.Background()
 	testAccount := "testcase_account1"
 	testPOIID := "abcd"
-	err := NewMongodbDataPool(s.mongoClient).Account(testAccount).SetPOIRating(ctx, testPOIID, map[string]float64{
+	err := NewMongodbDataPool(s.mongoClient, TestDBPrefix).Account(testAccount).SetPOIRating(ctx, testPOIID, map[string]float64{
 		"a": 1,
 		"b": 2,
 		"c": 3,
@@ -116,7 +120,7 @@ func (s *AccountPOITestSuite) TestAccountSetPOIRating() {
 	})
 	s.NoError(err)
 
-	cursor, err := s.mongoClient.Database(testAccount).Collection("poi_ratings").Find(ctx, bson.M{"id": testPOIID})
+	cursor, err := s.mongoClient.Database(TestDBPrefix+testAccount).Collection("poi_ratings").Find(ctx, bson.M{"id": testPOIID})
 	s.NoError(err)
 
 	var results []struct {
@@ -133,7 +137,7 @@ func (s *AccountPOITestSuite) TestAccountSetPOIRating() {
 
 func (s *AccountPOITestSuite) TestAccountGetPOIRating() {
 	ctx := context.Background()
-	ratings, err := NewMongodbDataPool(s.mongoClient).Account(defaultRatingAccount).GetPOIRating(ctx, testGetPOIRatingID)
+	ratings, err := NewMongodbDataPool(s.mongoClient, TestDBPrefix).Account(defaultRatingAccount).GetPOIRating(ctx, testGetPOIRatingID)
 	s.NoError(err)
 	s.Equal(ratings["a"], 1.0)
 }
@@ -142,7 +146,7 @@ func (s *AccountPOITestSuite) TestCommunitySetPOIRating() {
 	ctx := context.Background()
 	testAccount := "testcase_account1"
 	testPOIID := "abcd"
-	err := NewMongodbDataPool(s.mongoClient).Community("testcase_").SetPOIRating(ctx, testAccount, testPOIID, map[string]float64{
+	err := NewMongodbDataPool(s.mongoClient, TestDBPrefix).Community().SetPOIRating(ctx, testAccount, testPOIID, map[string]float64{
 		"a": 5,
 		"b": 4,
 		"c": 3,
@@ -167,7 +171,7 @@ func (s *AccountPOITestSuite) TestCommunitySetPOIRating() {
 
 func (s *AccountPOITestSuite) TestCommunityGetPOIRating() {
 	ctx := context.Background()
-	ratings, err := NewMongodbDataPool(s.mongoClient).Community("testcase_").GetPOISummarizedRatings(ctx, []string{testGetCommunityRatingID1, testGetCommunityRatingID2})
+	ratings, err := NewMongodbDataPool(s.mongoClient, TestDBPrefix).Community().GetPOISummarizedRatings(ctx, []string{testGetCommunityRatingID1, testGetCommunityRatingID2})
 	s.NoError(err)
 	s.Len(ratings, 2)
 	s.Equal(2.5, ratings[testGetCommunityRatingID1].AverageRating)

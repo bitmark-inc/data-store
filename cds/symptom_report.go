@@ -20,7 +20,7 @@ func (cds *CDS) AddSymptomDailyReports(c *gin.Context) {
 		return
 	}
 
-	if err := cds.dataStorePool.Community("").AddSymptomDailyReports(c, body.Reports); err != nil {
+	if err := cds.dataStorePool.Community().AddSymptomDailyReports(c, body.Reports); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -61,12 +61,12 @@ func (cds *CDS) GetSymptomReportItems(c *gin.Context) {
 	prevStart := start.Add(gap)
 	prevEnd := start
 
-	current, err := cds.dataStorePool.Community("").GetSymptomReportItems(c, start.Format("2006-01-02"), end.Format("2006-01-02"))
+	current, err := cds.dataStorePool.Community().GetSymptomReportItems(c, start.Format("2006-01-02"), end.Format("2006-01-02"))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	previous, err := cds.dataStorePool.Community("").GetSymptomReportItems(c, prevStart.Format("2006-01-02"), prevEnd.Format("2006-01-02"))
+	previous, err := cds.dataStorePool.Community().GetSymptomReportItems(c, prevStart.Format("2006-01-02"), prevEnd.Format("2006-01-02"))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
