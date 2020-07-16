@@ -1,7 +1,7 @@
 package web
 
 import (
-	"encoding/hex"
+	"encoding/base64"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -32,9 +32,9 @@ func (s *Server) CheckMacaroon() gin.HandlerFunc {
 		token := bearerTexts[1]
 
 		var m macaroon.Macaroon
-		data, err := hex.DecodeString(token)
+		data, err := base64.URLEncoding.DecodeString(token)
 		if err != nil {
-			abortWithErrorMessage(c, http.StatusBadRequest, errorResponse{Message: "macaroon not hex-encoded"})
+			abortWithErrorMessage(c, http.StatusBadRequest, errorResponse{Message: "macaroon not base64url encoded"})
 			return
 		}
 		if err := m.UnmarshalBinary(data); err != nil {
