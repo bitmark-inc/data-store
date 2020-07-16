@@ -77,7 +77,12 @@ func (s *Server) CheckMacaroon() gin.HandlerFunc {
 					}
 				}
 			case "resources":
-				parts := strings.Split(c.Request.URL.Path, "/")
+				path := c.Request.URL.Path
+				for _, param := range c.Params {
+					path = strings.Replace(path, param.Value, "", -1)
+				}
+				path = strings.TrimRight(path, "/")
+				parts := strings.Split(path, "/")
 				targetResource := parts[len(parts)-1]
 				allowedResources := strings.Split(arg, ",")
 				valid := false
