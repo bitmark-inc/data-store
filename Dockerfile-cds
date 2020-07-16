@@ -9,12 +9,13 @@ RUN go mod download
 ADD . .
 
 RUN go install github.com/bitmark-inc/data-store/commands/cds
-
+RUN go install github.com/bitmark-inc/data-store/commands/migrate
 
 # ---
 
 FROM alpine:3.10.3
 ARG dist=0.0
 COPY --from=build /go/bin/cds /
+COPY --from=build /go/bin/migrate /
 
 CMD ["/cds"]

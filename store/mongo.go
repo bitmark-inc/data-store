@@ -13,11 +13,13 @@ const (
 )
 
 type DataStorePool interface {
+	RegisterAccount(accountNumber string) error
+
 	// Account will return a personal data store for a specific account number.
 	Account(accountNumber string) PersonalDataStore
 
 	// Community will return a community data store.
-	Community(prefix string) CommunityDataStore
+	Community() CommunityDataStore
 }
 
 type PersonalDataStore interface {
@@ -34,27 +36,32 @@ type CommunityDataStore interface {
 
 // mongodbDataPool is an implementation of DataStorePool.
 type mongodbDataPool struct {
-	client *mongo.Client
+	client   *mongo.Client
+	dbPrefix string
 }
 
 // NewMongodbDataPool returns a mongodbDataPool instance
-func NewMongodbDataPool(client *mongo.Client) *mongodbDataPool {
+func NewMongodbDataPool(client *mongo.Client, dbPrefix string) *mongodbDataPool {
 	return &mongodbDataPool{
-		client: client,
+		client:   client,
+		dbPrefix: dbPrefix,
 	}
 }
 
 // Account returns a personal data store.
 func (m mongodbDataPool) Account(accountNumber string) PersonalDataStore {
+	dbName := fmt.Sprintf("%s%s", m.dbPrefix, accountNumber)
+	db := m.client.Database(dbName)
+	indexForPersonalAccountStore(db)
 	return &mongoAccountStore{
 		accountNumber: accountNumber,
-		db:            m.client.Database(accountNumber),
+		db:            db,
 	}
 }
 
 // Community returns a community data store.
-func (m mongodbDataPool) Community(prefix string) CommunityDataStore {
-	dbName := fmt.Sprintf("%scommunity", prefix)
+func (m mongodbDataPool) Community() CommunityDataStore {
+	dbName := fmt.Sprintf("%scommunity", m.dbPrefix)
 	return &mongoCommunityStore{
 		db: m.client.Database(dbName),
 	}

@@ -136,7 +136,7 @@ func main() {
 		log.Panic(err)
 	}
 
-	pds := pds.New(store.NewMongodbDataPool(mongoClient))
+	pds := pds.New(store.NewMongodbDataPool(mongoClient, viper.GetString("server.store_prefix")))
 
 	// Init http server
 	server = web.NewServer(viper.GetBool("server.tracing"), acct.(*account.AccountV2), viper.GetString("server.endpoint"), rootKey)
