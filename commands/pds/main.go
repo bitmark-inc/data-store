@@ -143,6 +143,8 @@ func main() {
 	server.Middleware(server.DumpRequest)
 	server.Route("PUT", "/poi_rating/:poi_id", server.CheckMacaroon(), pds.RatePOIResource())
 	server.Route("GET", "/poi_rating/:poi_id", server.CheckMacaroon(), pds.GetPOIResource())
+	server.Route("GET", "/data/export", server.CheckMacaroon(), pds.ExportData)
+	server.Route("DELETE", "/data/delete", server.CheckMacaroon(), pds.DeleteData)
 
 	log.WithField("prefix", "init").Info("Initialized http server")
 

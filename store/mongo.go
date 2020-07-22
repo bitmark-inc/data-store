@@ -25,6 +25,8 @@ type DataStorePool interface {
 type PersonalDataStore interface {
 	SetPOIRating(ctx context.Context, poiID string, ratings map[string]float64) error
 	GetPOIRating(ctx context.Context, poiID string) (map[string]float64, error)
+	ExportData(ctx context.Context) ([]byte, error)
+	DeleteData(ctx context.Context) error
 }
 
 type CommunityDataStore interface {
@@ -32,6 +34,7 @@ type CommunityDataStore interface {
 	GetPOISummarizedRatings(ctx context.Context, poiIDs []string) (map[string]POISummarizedRating, error)
 	AddSymptomDailyReports(ctx context.Context, reports []SymptomDailyReport) error
 	GetSymptomReportItems(ctx context.Context, start, end string) (map[string][]Bucket, error)
+	ExportData(ctx context.Context, accountNumber string) ([]byte, error)
 }
 
 // mongodbDataPool is an implementation of DataStorePool.
@@ -50,6 +53,10 @@ func NewMongodbDataPool(client *mongo.Client, dbPrefix string) *mongodbDataPool 
 
 // Account returns a personal data store.
 func (m mongodbDataPool) Account(accountNumber string) PersonalDataStore {
+	if accountNumber == "" {
+		return nil
+	}
+
 	dbName := fmt.Sprintf("%s%s", m.dbPrefix, accountNumber)
 	db := m.client.Database(dbName)
 	indexForPersonalAccountStore(db)

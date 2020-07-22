@@ -146,6 +146,7 @@ func main() {
 	server.Route("GET", "/poi_rating", server.CheckMacaroon(), cds.GetPOISummarizedRatings)
 	server.Route("POST", "/symptom-daily-reports", server.CheckMacaroon(), cds.AddSymptomDailyReports)
 	server.Route("GET", "/report-items", server.CheckMacaroon(), cds.GetSymptomReportItems)
+	server.Route("GET", "/data/export", server.CheckMacaroon(), cds.ExportData)
 	log.WithField("prefix", "init").Info("Initialized http server")
 
 	// Remove initial context

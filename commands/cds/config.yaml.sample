@@ -10,3 +10,5 @@ bitmarksdk:
 mongo:
   conn: mongodb://127.0.0.1:27017/?compressors=disabled
   pool: 10
+archive:
+  tempdir: "/tmp"
