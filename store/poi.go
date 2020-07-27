@@ -63,6 +63,7 @@ type POISummarizedRating struct {
 	ID            string                `bson:"_id" json:"id"`
 	LastUpdated   int64                 `bson:"last_updated" json:"last_updated"`
 	AverageRating float64               `bson:"rating_avg" json:"rating_avg"`
+	RatingCount   int64                 `bson:"rating_counts" json:"rating_counts"`
 	Ratings       map[string]RatingInfo `bson:"ratings" json:"ratings"`
 }
 
@@ -110,6 +111,26 @@ func (m *mongoCommunityStore) GetPOISummarizedRatings(ctx context.Context, poiID
 			return nil, err
 		}
 		ratings[r.ID] = r
+	}
+
+	countCursor, err := m.Resource("poi_ratings").Aggregate(ctx,
+		mongo.Pipeline{
+			AggregationMatch(bson.M{"id": bson.M{"$in": poiIDs}}),
+			AggregationGroup("$id", bson.D{
+				bson.E{"rating_counts", bson.M{"$sum": 1}},
+			}),
+		})
+
+	for countCursor.Next(ctx) {
+		var r POISummarizedRating
+
+		if err := countCursor.Decode(&r); err != nil {
+			return nil, err
+		}
+
+		targetRating := ratings[r.ID]
+		targetRating.RatingCount = r.RatingCount
+		ratings[r.ID] = targetRating
 	}
 
 	return ratings, nil

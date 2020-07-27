@@ -179,6 +179,7 @@ func (s *AccountPOITestSuite) TestCommunityGetPOIRating() {
 	s.Equal(3.0, ratings[testGetCommunityRatingID1].Ratings["b"].Score)
 	s.Equal(2, ratings[testGetCommunityRatingID1].Ratings["a"].Counts)
 	s.Equal(2, ratings[testGetCommunityRatingID1].Ratings["b"].Counts)
+	s.Equal(int64(2), ratings[testGetCommunityRatingID1].RatingCount)
 
 	s.Equal(3.0, ratings[testGetCommunityRatingID2].AverageRating)
 	s.Equal(3.0, ratings[testGetCommunityRatingID2].Ratings["a"].Score)
@@ -187,6 +188,7 @@ func (s *AccountPOITestSuite) TestCommunityGetPOIRating() {
 	s.Equal(2, ratings[testGetCommunityRatingID2].Ratings["a"].Counts)
 	s.Equal(2, ratings[testGetCommunityRatingID2].Ratings["b"].Counts)
 	s.Equal(2, ratings[testGetCommunityRatingID2].Ratings["b"].Counts)
+	s.Equal(int64(2), ratings[testGetCommunityRatingID2].RatingCount)
 }
 
 func TestAccountPOI(t *testing.T) {
