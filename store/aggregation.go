@@ -92,3 +92,18 @@ func AggregationGeoNear(coordinates []float64, distance int, options ...GeoNearO
 		bson.E{"$geoNear", geoNear},
 	}
 }
+
+// AggregationSort sorts the documents by specified key
+func AggregationSort(key string, order int) bson.D {
+	sort := bson.D{bson.E{key, order}}
+	return bson.D{
+		bson.E{
+			"$sort", sort,
+		},
+	}
+}
+
+// AggregationLimit limits the number of documents in the pipeline
+func AggregationLimit(limit int64) bson.D {
+	return bson.D{{"$limit", limit}}
+}

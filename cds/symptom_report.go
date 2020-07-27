@@ -1,8 +1,11 @@
 package cds
 
 import (
+	"bufio"
+	"encoding/csv"
 	"net/http"
 	"sort"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -11,16 +14,27 @@ import (
 )
 
 func (cds *CDS) AddSymptomDailyReports(c *gin.Context) {
-	var body struct {
-		Reports []store.SymptomDailyReport `json:"reports"`
-	}
-
-	if err := c.Bind(&body); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	file, err := c.FormFile("file")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	if err := cds.dataStorePool.Community().AddSymptomDailyReports(c, body.Reports); err != nil {
+	f, err := file.Open()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	defer f.Close()
+
+	reader := csv.NewReader(bufio.NewReader(f))
+	lines, err := reader.ReadAll()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	reports := transformToSymptomDailyReports(lines)
+	if err := cds.dataStorePool.Community().AddSymptomDailyReports(c, reports); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -28,9 +42,32 @@ func (cds *CDS) AddSymptomDailyReports(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"result": "ok"})
 }
 
+func transformToSymptomDailyReports(lines [][]string) []store.SymptomDailyReport {
+	reports := make([]store.SymptomDailyReport, 0)
+	for _, col := range lines[0][1:] {
+		reports = append(reports, store.SymptomDailyReport{Date: col})
+	}
+	for i, row := range lines[1:] {
+		if i == len(lines[1:])-1 {
+			for i, cell := range row[1:] {
+				if cell != "NA" {
+					cnt, _ := strconv.Atoi(cell)
+					reports[i].CheckinsNumPastThreeDays = cnt
+				}
+			}
+			break
+		}
+		symptom := row[0]
+		for i, cell := range row[1:] {
+			cnt, _ := strconv.Atoi(cell)
+			reports[i].Symptoms = append(reports[i].Symptoms, store.SymptomStats{Name: symptom, Count: cnt})
+		}
+	}
+	return reports
+}
+
 type reportItemQueryParams struct {
-	Start string `form:"start"`
-	End   string `form:"end"`
+	Days int64 `form:"days"`
 }
 
 type reportItem struct {
@@ -47,26 +84,25 @@ func (cds *CDS) GetSymptomReportItems(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	start, err := time.Parse(time.RFC3339, params.Start)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
+	days := int64(7)
+	if params.Days != 0 {
+		days = params.Days
 	}
-	end, err := time.Parse(time.RFC3339, params.End)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	gap := start.Sub(end)
-	prevStart := start.Add(gap)
-	prevEnd := start
 
-	current, err := cds.dataStorePool.Community().GetSymptomReportItems(c, start.Format("2006-01-02"), end.Format("2006-01-02"))
+	latestReport, err := cds.dataStorePool.Community().FindLatestDailyReport(c)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	previous, err := cds.dataStorePool.Community().GetSymptomReportItems(c, prevStart.Format("2006-01-02"), prevEnd.Format("2006-01-02"))
+	currEnd, _ := time.Parse("2006-01-02", latestReport.Date)
+	prevEnd := currEnd.Add(-time.Hour * 24 * time.Duration(days))
+
+	current, err := cds.dataStorePool.Community().GetSymptomReportItems(c, currEnd.Format("2006-01-02"), days)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	previous, err := cds.dataStorePool.Community().GetSymptomReportItems(c, prevEnd.Format("2006-01-02"), days)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -76,7 +112,9 @@ func (cds *CDS) GetSymptomReportItems(c *gin.Context) {
 	items := getReportItemsForDisplay(results, func(symptomID string) string {
 		return symptomID
 	})
-	c.JSON(http.StatusOK, gin.H{"report_items": items})
+	c.JSON(http.StatusOK, gin.H{
+		"report_items":                 items,
+		"checkins_num_past_three_days": latestReport.CheckinsNumPastThreeDays})
 }
 
 func gatherReportItemsWithDistribution(currentBuckets, previousBuckets map[string][]store.Bucket, avg bool) map[string]*reportItem {

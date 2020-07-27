@@ -33,7 +33,8 @@ type CommunityDataStore interface {
 	SetPOIRating(ctx context.Context, accountNumber, poiID string, ratings map[string]float64) error
 	GetPOISummarizedRatings(ctx context.Context, poiIDs []string) (map[string]POISummarizedRating, error)
 	AddSymptomDailyReports(ctx context.Context, reports []SymptomDailyReport) error
-	GetSymptomReportItems(ctx context.Context, start, end string) (map[string][]Bucket, error)
+	FindLatestDailyReport(ctx context.Context) (*SymptomDailyReport, error)
+	GetSymptomReportItems(ctx context.Context, end string, limit int64) (map[string][]Bucket, error)
 	ExportData(ctx context.Context, accountNumber string) ([]byte, error)
 }
 
