@@ -94,7 +94,11 @@ func (cds *CDS) GetSymptomReportItems(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	currEnd, _ := time.Parse("2006-01-02", latestReport.Date)
+	currEnd, err := time.Parse("2006-01-02", latestReport.Date)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
 	prevEnd := currEnd.Add(-time.Hour * 24 * time.Duration(days))
 
 	current, err := cds.dataStorePool.Community().GetSymptomReportItems(c, currEnd.Format("2006-01-02"), days)

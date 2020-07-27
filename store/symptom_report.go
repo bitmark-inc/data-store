@@ -48,6 +48,7 @@ type Bucket struct {
 	Value int    `bson:"value" json:"value"`
 }
 
+// GetSymptomReportItems returns report items in the date range which starts at `limit` days ago, and ends at `end`.
 func (m *mongoCommunityStore) GetSymptomReportItems(ctx context.Context, end string, limit int64) (map[string][]Bucket, error) {
 	pipeline := mongo.Pipeline{
 		AggregationMatch(bson.M{
