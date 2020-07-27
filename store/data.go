@@ -62,7 +62,17 @@ func (m *mongoAccountStore) ExportData(ctx context.Context) ([]byte, error) {
 }
 
 func (m *mongoAccountStore) DeleteData(ctx context.Context) error {
-	return m.db.Drop(ctx)
+	collectionNames, err := m.db.ListCollectionNames(ctx, bson.D{})
+	if err != nil {
+		return err
+	}
+
+	for _, name := range collectionNames {
+		if err := m.db.Collection(name).Drop(ctx); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // ExportData prepares an archive file that contains all resources to be exported from community data store
