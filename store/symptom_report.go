@@ -9,11 +9,14 @@ import (
 )
 
 type SymptomDailyReport struct {
-	Date     string `json:"date"`
-	Symptoms []struct {
-		Name  string `json:"name"`
-		Count int    `json:"count"`
-	} `json:"symptoms"`
+	Date                     string         `bson:"date"`
+	Symptoms                 []SymptomStats `bson:"symptoms"`
+	CheckinsNumPastThreeDays int            `bson:"checkins_num_past_three_days"`
+}
+
+type SymptomStats struct {
+	Name  string `bson:"name"`
+	Count int    `bson:"count"`
 }
 
 func (m *mongoCommunityStore) AddSymptomDailyReports(ctx context.Context, reports []SymptomDailyReport) error {
@@ -22,7 +25,8 @@ func (m *mongoCommunityStore) AddSymptomDailyReports(ctx context.Context, report
 		filter := bson.M{"date": report.Date}
 		update := bson.M{
 			"$set": bson.M{
-				"symptoms": report.Symptoms,
+				"symptoms":                     report.Symptoms,
+				"checkins_num_past_three_days": report.CheckinsNumPastThreeDays,
 			},
 		}
 		_, err := m.Resource("symptom_reports").UpdateOne(ctx, filter, update, opts)
@@ -44,14 +48,16 @@ type Bucket struct {
 	Value int    `bson:"value" json:"value"`
 }
 
-func (m *mongoCommunityStore) GetSymptomReportItems(ctx context.Context, start, end string) (map[string][]Bucket, error) {
+// GetSymptomReportItems returns report items in the date range which starts at `limit` days ago, and ends at `end`.
+func (m *mongoCommunityStore) GetSymptomReportItems(ctx context.Context, end string, limit int64) (map[string][]Bucket, error) {
 	pipeline := mongo.Pipeline{
 		AggregationMatch(bson.M{
 			"date": bson.M{
-				"$gte": start,
-				"$lt":  end,
+				"$lte": end,
 			},
 		}),
+		AggregationSort("date", -1),
+		AggregationLimit(limit),
 		AggregationUnwind("$symptoms"),
 		AggregationGroup("$symptoms.name", bson.D{
 			bson.E{
@@ -77,4 +83,12 @@ func (m *mongoCommunityStore) GetSymptomReportItems(ctx context.Context, start, 
 		results[aggItem.ID] = aggItem.Buckets
 	}
 	return results, nil
+}
+
+func (m *mongoCommunityStore) FindLatestDailyReport(ctx context.Context) (*SymptomDailyReport, error) {
+	var report SymptomDailyReport
+
+	opts := options.FindOne().SetSort(bson.D{{"date", -1}})
+	err := m.Resource("symptom_reports").FindOne(ctx, bson.M{}, opts).Decode(&report)
+	return &report, err
 }
