@@ -13,6 +13,15 @@ import (
 	"github.com/bitmark-inc/data-store/store"
 )
 
+const (
+	onesignalAppID = "74f5ef01-1e4f-407e-a288-fa78fd552556"
+)
+
+var (
+	notificationHeadingsNewReport = map[string]string{"en": "New trends data available"}
+	notificationContentsNewReport = map[string]string{"en": "New trends data available"}
+)
+
 func (cds *CDS) AddSymptomDailyReports(c *gin.Context) {
 	file, err := c.FormFile("file")
 	if err != nil {
@@ -38,6 +47,9 @@ func (cds *CDS) AddSymptomDailyReports(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
+	// TODO: log error
+	cds.notificationClient.NotifyActiveUsers(notificationHeadingsNewReport, notificationContentsNewReport)
 
 	c.JSON(http.StatusOK, gin.H{"result": "ok"})
 }
