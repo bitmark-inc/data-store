@@ -13,13 +13,9 @@ import (
 	"github.com/bitmark-inc/data-store/store"
 )
 
-const (
-	onesignalAppID = "74f5ef01-1e4f-407e-a288-fa78fd552556"
-)
-
 var (
-	notificationHeadingsNewReport = map[string]string{"en": "New trends data available"}
-	notificationContentsNewReport = map[string]string{"en": "New trends data available"}
+	notificationHeadingsNewReport = map[string]string{"en": "New Berkeley Data Available"}
+	notificationContentsNewReport = map[string]string{"en": "New user-reported data just dropped! Tap to view the latest health trends for the UC Berkeley Safe Campus Study."}
 )
 
 func (cds *CDS) AddSymptomDailyReports(c *gin.Context) {
