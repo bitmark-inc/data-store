@@ -13,6 +13,11 @@ import (
 	"github.com/bitmark-inc/data-store/store"
 )
 
+var (
+	notificationHeadingsNewReport = map[string]string{"en": "New Berkeley Data Available"}
+	notificationContentsNewReport = map[string]string{"en": "New user-reported data just dropped! Tap to view the latest health trends for the UC Berkeley Safe Campus Study."}
+)
+
 func (cds *CDS) AddSymptomDailyReports(c *gin.Context) {
 	file, err := c.FormFile("file")
 	if err != nil {
@@ -38,6 +43,9 @@ func (cds *CDS) AddSymptomDailyReports(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
+	// TODO: log error
+	cds.notificationClient.NotifyActiveUsers(notificationHeadingsNewReport, notificationContentsNewReport)
 
 	c.JSON(http.StatusOK, gin.H{"result": "ok"})
 }

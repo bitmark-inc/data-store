@@ -21,6 +21,7 @@ import (
 	bitmarksdk "github.com/bitmark-inc/bitmark-sdk-go"
 	"github.com/bitmark-inc/bitmark-sdk-go/account"
 	"github.com/bitmark-inc/data-store/cds"
+	"github.com/bitmark-inc/data-store/notification"
 	"github.com/bitmark-inc/data-store/store"
 	"github.com/bitmark-inc/data-store/web"
 )
@@ -136,7 +137,8 @@ func main() {
 		log.Panic(err)
 	}
 
-	cds := cds.New(store.NewMongodbDataPool(mongoClient, viper.GetString("server.store_prefix")))
+	client := notification.NewClient(viper.GetString("onesignal.app_id"), viper.GetString("onesignal.app_key"))
+	cds := cds.New(store.NewMongodbDataPool(mongoClient, viper.GetString("server.store_prefix")), client)
 
 	// Init http server
 	server = web.NewServer(viper.GetBool("server.tracing"), acct.(*account.AccountV2), viper.GetString("server.endpoint"), rootKey)
