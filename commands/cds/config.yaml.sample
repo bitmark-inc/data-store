@@ -4,6 +4,7 @@ server:
   macaroon_root_key: <MACAROON_ROOT_KEY>
   bitmark_account_seed: <BITMARK_ACCOUNT_SEED>
   store_prefix: "autonomy_"
+  participant_file: "./participant_ids.json"
 bitmarksdk:
   token: <API_TOKEN>
   network: testnet

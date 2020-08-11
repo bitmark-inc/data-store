@@ -16,5 +16,6 @@ RUN go install github.com/bitmark-inc/data-store/commands/pds
 FROM alpine:3.10.3
 ARG dist=0.0
 COPY --from=build /go/bin/pds /
+ADD participant_ids.json /
 
 CMD ["/pds"]

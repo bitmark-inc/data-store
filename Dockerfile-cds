@@ -17,5 +17,6 @@ FROM alpine:3.10.3
 ARG dist=0.0
 COPY --from=build /go/bin/cds /
 COPY --from=build /go/bin/migrate /
+ADD participant_ids.json /
 
 CMD ["/cds"]

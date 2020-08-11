@@ -1,8 +1,10 @@
 package web
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -127,4 +129,33 @@ func parseCaveat(cav string) (string, string, string, error) {
 func forbidAccess(c *gin.Context, cav string) {
 	c.JSON(http.StatusForbidden, gin.H{"reason": fmt.Sprintf("caveat \"%s\" not satisfied", cav)})
 	c.Abort()
+}
+
+func checkParticipant(filename string) gin.HandlerFunc {
+	var participants = map[string]struct{}{}
+
+	if filename == "" {
+		panic("invalid participant file given")
+	}
+
+	f, err := os.Open(filename)
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+
+	if err := json.NewDecoder(f).Decode(&participants); err != nil {
+		panic(err)
+	}
+
+	return func(c *gin.Context) {
+		participantID := c.GetHeader("X-PARTICIPANT-ID")
+
+		if _, ok := participants[participantID]; !ok {
+			abortWithErrorMessage(c, http.StatusBadRequest, ErrParticipantNotAllowed)
+			return
+		}
+
+		c.Next()
+	}
 }

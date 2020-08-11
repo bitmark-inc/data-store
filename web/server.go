@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/spf13/viper"
 
 	"github.com/bitmark-inc/bitmark-sdk-go/account"
 )
@@ -56,7 +57,9 @@ func (s *Server) Route(httpMethod, path string, handlers ...gin.HandlerFunc) {
 
 // Run to run the server
 func (s *Server) Run(addr string) error {
-	s.router.POST("/register", s.Register)
+	participantFile := viper.GetString("server.participant_file")
+
+	s.router.Use(checkParticipant(participantFile)).POST("/register", s.Register)
 	s.router.GET("/information", s.Info)
 
 	s.server = &http.Server{
