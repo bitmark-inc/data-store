@@ -59,8 +59,8 @@ func (s *Server) Route(httpMethod, path string, handlers ...gin.HandlerFunc) {
 func (s *Server) Run(addr string) error {
 	participantFile := viper.GetString("server.participant_file")
 
-	s.router.Use(checkParticipant(participantFile)).POST("/register", s.Register)
 	s.router.GET("/information", s.Info)
+	s.router.Use(checkParticipant(participantFile)).POST("/register", s.Register)
 
 	s.server = &http.Server{
 		Addr:    addr,
